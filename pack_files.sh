@@ -1,10 +1,15 @@
 #!/bin/bash
 
-# ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Statement_79\S+xml$" "Statement_All"
+# ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Statement_67\S+xml$" "Statement_All"
 # ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Invoice_\S+xml$" "Invoice_xml_All"
 # ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Invoice_\S+pdf$" "Invoice_pdf_All"
 # ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Cover_note_\S+xml$" "Cover_note_xml_All"
 # ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Cover_note_\S+pdf$" "Cover_note_pdf_All"
+
+
+# track progress:
+# pid=`ps -eaf | grep pack-files.sh | grep -v grep | awk '{print $2}'`
+# cat Statement_All.txt -n | grep `ps -eaf | grep $pid | egrep "\S+xml$" | awk '{print $12}'`
 
 files_are_being_written(){
     first=`ls -l | egrep -E "$1" | wc -l`
@@ -29,7 +34,6 @@ last_file_is_being_written(){
     fi
 }
 
-
 echo `date +'%x %X'` INFO "Validating input arguments..."
 if [ -z "$1" ]
     then
@@ -51,6 +55,11 @@ work_directory="$1"
 pattern="$2"
 file_prefix=$3
 file_list=$file_prefix".txt"
+
+# zip multithreading part
+number_of_cpu=`lscpu | egrep "^CPU\(s\)\S+" | awk '{print $2}'`
+threads_per_core=`lscpu | egrep "^Thread\(s\) per core\S+" | awk '{print $4}'`
+number_of_threads=`expr $number_of_cpu \* $threads_per_core`
 
 cd "$work_directory"
 echo `date +'%x %X'` INFO "Process started. Pattern: $pattern in" `pwd`"."
@@ -91,15 +100,36 @@ ls -l | egrep -E "$pattern" | awk '{print $9}' > "$file_list"
 # ofile=$file_prefix"_"$timestamp"0000.tar.gz"
 # tar -c -T "$file_list" -f $ofile --remove-files
 
-# zip version
-ofiletmp=$file_prefix"_"$timestamp"0000.zip.tmp"
-ofile=$file_prefix"_"$timestamp"0000.zip"
-for file in `cat $file_list`
+zip_files(){
+    from=`expr \( $1 - 1 \) \* $2 + 1`
+    if [ $1 -eq $number_of_threads ]
+        then
+            to=$number_of_files
+        else
+            to=`expr $1 \* $2`
+    fi
+    ofiletmp=$file_prefix"_"$timestamp"0000_"$1".zip.tmp"
+    ofile=$file_prefix"_"$timestamp"0000_"$1".zip"
+    for file in `cat $file_list | sed -n "$from,$to p"`
+    do
+        zip -4 -rmq $ofiletmp $file
+    done
+    mv $ofiletmp $ofile
+    echo `date +'%x %X'` "INFO $ofile created."
+}
+
+
+number_of_files=`cat $file_list | wc -l`
+zip_size=`expr $number_of_files / $number_of_threads`
+limit=`expr $number_of_threads - 1`
+
+# spawn threads
+for i in $(seq 1 $limit)
 do
-    zip -4 -rmq $ofiletmp $file
+    zip_files $i $zip_size &
 done
 
-mv $ofiletmp $ofile
+zip_files $number_of_threads $zip_size
 
-echo `date +'%x %X'` "INFO $ofile created."
+
 echo `date +'%x %X'` INFO "Program finished."
