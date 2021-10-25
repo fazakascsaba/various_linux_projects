@@ -1,0 +1,11 @@
+DIR="/home_ext/amex_prod/outgoing/"
+PATTERN="GNS\S+7002$"
+UPLOADED_FILES="uploaded_files.txt"
+
+DEST="<ip-address>"
+KEY="/root/keys/amex_new/<rsa_key>"
+USERNAME="<username>"
+DESTDIR="inbox"
+
+email_to="operator@<somecompany.com>"
+email_client="AMEX"
