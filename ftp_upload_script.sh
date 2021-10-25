@@ -26,11 +26,11 @@ then
 fi
 
 number_of_files=`ls -l | egrep -E "$PATTERN" | wc -l`
-echo `$DATE` "number of files:" $number_of_files
+echo `$DATE` "INFO number of files:" $number_of_files
 
 if [ $number_of_files -eq 0 ]
 then
-   echo `$DATE` " WARNING Directory is empty"
+   echo `$DATE` "WARNING Directory is empty"
    exit 1
 fi
 
@@ -49,7 +49,7 @@ do
          mv -f $file ./files_with_wrong_size/
          level="ERROR"
          result="FAILURE"
-         email_body="$email_client file $file has size error (not divisible by 1400). Escalate to SVBO support team."
+         email_body="$file has size error (not divisible by 1400). Escalate to SVBO support team."
       else
          echo `$DATE` "INFO Sending $file size: $file_size"
          sftp -o "IdentityFile=$KEY" $USERNAME@$DEST 2>&1 <<EOF
