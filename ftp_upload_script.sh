@@ -18,7 +18,7 @@ if [ -z "$1" ]
 fi
 
 source $1
-
+cd $DIR
 
 if [ ! -f "./$UPLOADED_FILES" ]
 then
