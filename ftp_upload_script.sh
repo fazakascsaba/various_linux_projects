@@ -46,6 +46,9 @@ do
       if [ ! `expr $file_size % 1400` = 0 ] && [[ $1 == *"amex"* ]]
       then
          echo `$DATE` "ERROR Wrong file size"
+         if [ ! -d "files_with_wrong_size" ]; then
+            mkdir "files_with_wrong_size"
+         fi
          mv -f $file ./files_with_wrong_size/
          level="ERROR"
          result="FAILURE"
@@ -54,10 +57,12 @@ do
          echo `$DATE` "INFO Sending $file size: $file_size"
          sftp -o "IdentityFile=$KEY" $USERNAME@$DEST 2>&1 <<EOF
          cd $DESTDIR
-         mput $file
          ls -ltr
          quit
 EOF
+#cd $DESTDIR
+#mput $file <- PUT THIS BACK!!!
+#ls -ltr
          if [ `echo $?` -eq 0 ]
          then
             echo `$DATE` "INFO" $file "uploaded successfully."
@@ -75,6 +80,9 @@ EOF
       fi
    else
       echo `$DATE` "WARNING" $file "was previously sent."
+      if [ ! -d "duplicate_attempts" ]; then
+         mkdir "duplicate_attempts"
+      fi
       mv -f $file ./duplicate_attempts/
       level="WARNING"
       result="FAILURE"
