@@ -98,7 +98,7 @@ echo `date +'%x %X'` INFO "Packing files..."
 ls -l | egrep -E "$pattern" | awk '{print $9}' > "$file_list"
 # tar version
 # ofile=$file_prefix"_"$timestamp"0000.tar.gz"
-# tar -c -T "$file_list" -f $ofile --remove-files
+# tar -cz -T "$file_list" -f $ofile --remove-files
 
 zip_files(){
     from=`expr \( $1 - 1 \) \* $2 + 1`
