@@ -1,10 +1,6 @@
 #!/bin/bash
 
-# ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Statement_67\S+xml$" "Statement_All"
-# ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Invoice_\S+xml$" "Invoice_xml_All"
-# ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Invoice_\S+pdf$" "Invoice_pdf_All"
-# ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Cover_note_\S+xml$" "Cover_note_xml_All"
-# ./pack-files.sh "/weblogic_appdata/paymentsense/outgoing/statements/zip" "Cover_note_\S+pdf$" "Cover_note_pdf_All"
+# /home/weblogic/pack-files.sh "/weblogic_appdata/paymentsense/outgoing/reports" "SVXP_A_\S+\.xml$" "svxp_a_All_XML"
 
 
 # track progress:
@@ -13,7 +9,7 @@
 
 files_are_being_written(){
     first=`ls -l | egrep -E "$1" | wc -l`
-    sleep 30s
+    sleep 10s
     second=`ls -l | egrep -E "$1" | wc -l`
     if [ $first = $second ]
     then
@@ -24,7 +20,7 @@ files_are_being_written(){
 }
 last_file_is_being_written(){
     size1=`du $1 -b | cut -f 1`
-    sleep 30s
+    sleep 10s
     size2=`du $1 -b | cut -f 1`
     if [ $size1 = $size2 ]
     then
@@ -55,6 +51,7 @@ work_directory="$1"
 pattern="$2"
 file_prefix=$3
 file_list=$file_prefix".txt"
+target_directory=$work_directory"/tar_gz"/$file_prefix
 
 # zip multithreading part
 number_of_cpu=`lscpu | egrep "^CPU\(s\)\S+" | awk '{print $2}'`
@@ -71,9 +68,19 @@ then
     rm "$file_list"
 fi
 
-if [ ! -d "zip" ]; then
-  mkdir "zip"
+if [ ! -d "$target_directory" ]; then
+  mkdir -p "$target_directory"
 fi
+
+
+# do not execute on empty set
+initial_number_of_files=`ls -l | egrep -E "$2" | wc -l`
+if [ $initial_number_of_files -eq "0" ]
+then
+    echo `date +'%x %X'` WARNING "No files are matching your pattern."
+    exit 0
+fi
+
 
 
 #delay process when files are still delivered
@@ -92,44 +99,46 @@ done
 echo `date +'%x %X'` INFO Size of $latest_file did not change in the last 30 seconds.
 
 
-timestamp=`date +'%d%m%Y'`
+timestamp=`date +'%d%m%Y%H%M'`
 echo `date +'%x %X'` INFO "Packing files..."
 
 ls -l | egrep -E "$pattern" | awk '{print $9}' > "$file_list"
 # tar version
-# ofile=$file_prefix"_"$timestamp"0000.tar.gz"
-# tar -cz -T "$file_list" -f $ofile --remove-files
+ofile=$file_prefix"_"$timestamp".tar.gz"
+tar -cz -T "$file_list" -f $ofile --remove-files
 
-zip_files(){
-    from=`expr \( $1 - 1 \) \* $2 + 1`
-    if [ $1 -eq $number_of_threads ]
-        then
-            to=$number_of_files
-        else
-            to=`expr $1 \* $2`
-    fi
-    ofiletmp=$file_prefix"_"$timestamp"0000_"$1".zip.tmp"
-    ofile=$file_prefix"_"$timestamp"0000_"$1".zip"
-    for file in `cat $file_list | sed -n "$from,$to p"`
-    do
-        zip -4 -rmq $ofiletmp $file
-    done
-    mv $ofiletmp $ofile
-    echo `date +'%x %X'` "INFO $ofile created."
-}
+mv $ofile $target_directory
 
-
-number_of_files=`cat $file_list | wc -l`
-zip_size=`expr $number_of_files / $number_of_threads`
-limit=`expr $number_of_threads - 1`
-
-# spawn threads
-for i in $(seq 1 $limit)
-do
-    zip_files $i $zip_size &
-done
-
-zip_files $number_of_threads $zip_size
+#zip_files(){
+#    from=`expr \( $1 - 1 \) \* $2 + 1`
+#    if [ $1 -eq $number_of_threads ]
+#        then
+#            to=$number_of_files
+#        else
+#            to=`expr $1 \* $2`
+#    fi
+#    ofiletmp=$file_prefix"_"$timestamp"_"$1".zip.tmp"
+#    ofile=$file_prefix"_"$timestamp"_"$1".zip"
+#    for file in `cat $file_list | sed -n "$from,$to p"`
+#    do
+#        zip -4 -rmq $ofiletmp $file
+#    done
+#    mv $ofiletmp $ofile
+#    echo `date +'%x %X'` "INFO $ofile created."
+#}
+#
+#
+#number_of_files=`cat $file_list | wc -l`
+#zip_size=`expr $number_of_files / $number_of_threads`
+#limit=`expr $number_of_threads - 1`
+#
+## spawn threads
+#for i in $(seq 1 $limit)
+#do
+#    zip_files $i $zip_size &
+#done
+#
+#zip_files $number_of_threads $zip_size
 
 
 echo `date +'%x %X'` INFO "Program finished."
