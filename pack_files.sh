@@ -9,7 +9,7 @@
 
 files_are_being_written(){
     first=`ls -l | egrep -E "$1" | wc -l`
-    sleep 10s
+    sleep 30s
     second=`ls -l | egrep -E "$1" | wc -l`
     if [ $first = $second ]
     then
@@ -20,7 +20,7 @@ files_are_being_written(){
 }
 last_file_is_being_written(){
     size1=`du $1 -b | cut -f 1`
-    sleep 10s
+    sleep 30s
     size2=`du $1 -b | cut -f 1`
     if [ $size1 = $size2 ]
     then
@@ -48,10 +48,10 @@ if [ -z "$3" ]
 fi
 
 work_directory="$1"
-pattern="$2"
-file_prefix=$3
+pattern=$2"\S+"$3"$"
+file_prefix=$4
 file_list=$file_prefix".txt"
-target_directory=$work_directory"/tar_gz"/$file_prefix
+target_directory=$work_directory"/tar_gz"
 
 # zip multithreading part
 number_of_cpu=`lscpu | egrep "^CPU\(s\)\S+" | awk '{print $2}'`
@@ -106,6 +106,14 @@ ls -l | egrep -E "$pattern" | awk '{print $9}' > "$file_list"
 # tar version
 ofile=$file_prefix"_"$timestamp".tar.gz"
 tar -cz -T "$file_list" -f $ofile --remove-files
+
+if [ `whoami` = "root" ]
+then
+    chown weblogic:weblogic $ofile
+else
+    echo `date +'%x %X'` ERROR "Changing permissions to weblogic:weblogic failed. Must be root."
+    exit 1
+fi
 
 mv $ofile $target_directory
 
