@@ -51,7 +51,8 @@ work_directory="$1"
 pattern=$2"\S+"$3"$"
 file_prefix=$4
 file_list=$file_prefix".txt"
-target_directory=$work_directory"/tar_gz"
+target_directory="$work_directory/$file_prefix"
+
 
 # zip multithreading part
 number_of_cpu=`lscpu | egrep "^CPU\(s\)\S+" | awk '{print $2}'`
@@ -68,13 +69,17 @@ then
     rm "$file_list"
 fi
 
-if [ ! -d "$target_directory" ]; then
+if [ ! -d "$target_directory" ]
+then
   mkdir -p "$target_directory"
+  chown weblogic:weblogic $target_directory
 fi
 
 
+echo `date +'%x %X'` "INFO Required directories have been created."
+
 # do not execute on empty set
-initial_number_of_files=`ls -l | egrep -E "$2" | wc -l`
+initial_number_of_files=`ls -l | egrep -E "$pattern" | wc -l`
 if [ $initial_number_of_files -eq "0" ]
 then
     echo `date +'%x %X'` WARNING "No files are matching your pattern."
