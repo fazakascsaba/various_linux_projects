@@ -1,0 +1,7 @@
+SCRIPT_FOLDER="/root/scripts/consolidated"
+HOLIDAY_FILE="holidays_`date +%Y`.txt"
+DESJARDIN_FOLDER="/home/jenkins/desjardin"
+KEY="/root/keys/<user>/id_rsa_<key_name>"
+USERNAME="<ftp_username>"
+DEST="<ip.address>"
+DESTDIR="/PSP_inbound"
