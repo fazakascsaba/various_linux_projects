@@ -55,7 +55,7 @@ if [ -n "$(ls -A $DESJARDIN_FOLDER/queue 2>/dev/null)" ]
 then
    cd ./queue
    echo `date +'%x %X'`" INFO sending files from queue folder."
-   files_to_be_uploaded=`ls -A i_drd_*.txt | awk 'BEGIN {FS=""} {ORS=" "}{print}'`
+   files_to_be_uploaded=`ls -tr i_drd_*.txt | awk 'BEGIN {FS=""} {ORS=" "}{print}'`
    for file in $files_to_be_uploaded
    do
       f=$(cut -d'.' -f1 <<<"$file")
@@ -87,11 +87,11 @@ if [ -n "$(ls -A $DESJARDIN_FOLDER/input 2>/dev/null)" ]
 then
    cd ./input
    echo `date +'%x %X'`" INFO sending files from input folder."
-   files_to_be_uploaded=`ls -A i_drd_*.txt | awk 'BEGIN {FS=""} {ORS=" "}{print}'`
+   files_to_be_uploaded=`ls -tr i_drd_*.txt | awk 'BEGIN {FS=""} {ORS=" "}{print}'`
    for file in $files_to_be_uploaded
    do
       f=$(cut -d'.' -f1 <<<"$file")
-      echo `date +'%x %X'`" INFO sending files from queue folder: $f.txt and $f.cksum"
+      echo `date +'%x %X'`" INFO sending files from input folder: $f.txt and $f.cksum"
       sftp -o "IdentityFile=$KEY" $USERNAME@$DEST 2>&1 <<EOF
       cd $DESTDIR
       put $f.txt
